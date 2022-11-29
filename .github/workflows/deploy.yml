@@ -2,9 +2,8 @@ name: deploy on github pages
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    tags:
+      - "*.*.*"
 
 jobs:
   deploy:
