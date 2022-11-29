@@ -2,7 +2,7 @@
 
 Theoretical concepts behind general purpose media server.
 
-Read online [here](jellyfish-dev.github.io/book).
+Read online [here](https://jellyfish-dev.github.io/book).
 
 ## Writing
 
