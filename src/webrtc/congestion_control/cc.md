@@ -9,9 +9,6 @@ Congestion control goal is to prevent from congesting the network by controlling
 Every time, the sender notices that the packet transmission time increases or packets are getting
 lost it should lower its rate.
 
-<!-- In the case of multimedia, lowering the sender rate is challenging as the audio and video 
-have specified bitrate and sometimes even lowering the video quality might not  -->
-
 ## TWCC vs GCC
 
 [TWCC (Transport-wide Congestion Control)][twcc-draft] defines a new RTP header extension and RTCP message used to 
