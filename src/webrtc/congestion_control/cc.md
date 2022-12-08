@@ -41,14 +41,15 @@ the stream with a specific bitrate.
 If the network behavior remains unchanged after increasing the sender rate the estimation is increased.
 If the network starts being congested (transmission delay increases, packets get lost), the estimation
 is decreased.
-This way we are slowly increasing the sender rate up to the point where the network can't accept more data.
+This way we are slowly increasing the sender rate up to the point where the network can't accept any more data.
 
 There are two increase modes: multiplicative and additive.
 In the multiplicative mode, the estimation is increased by no more than 8% per second.
 In the additvie mode, the estimation is increased with at most half a packet per `response_time_interval` (RTT + 100ms).
 In other words, the additive mode is much slower and is used when the estimation is close to convergence.
+You can read more about selecting proper increase mode in the [section 5.5 of the GCC RFC draft][gcc-sec-5.5].
 
-When estimation is decreased, it is set to 85%-95% (exact value depends on the implementation) of the latest receiver rate.
+When we detect network overuse, the estimation is decreased to 85%-95% (exact value depends on the implementation) of the latest receiver rate.
 
 The whole process is shown in the following figure.
 
@@ -79,30 +80,43 @@ there is always some quality that will fit into the receiver network condition.
 
 As stated before, bandwidth estimation depends on the amount of data that is sent therefore, if the server sends
 little data the estimation will be low.
+An implication of this fact is that once the SFU selects very low resolution it will never be able to switch to the higher one. 
 To recover from this situation, the server has to increase the amount of data it sends which leads us to a connection probing.
 
 ## Connection Probing
 
 When the server wants to recover from sending a low resolution to some peer, it has to generate additional traffic
 to see if the network can handle more data.
+This is what we refer to as "connection probing".
 
-Unfortunately, the connection probing is not standardized so every SFU might do this in a different way.
+Unfortunately, the connection probing is not standardized so every SFU might do it in a different way.
 
 The questions we need to answer are:
-1. What data use for probing?
+1. What data should be used for probing?
 1. How much to probe?
 1. How often to probe?
 
-### 1. What data use for probing
+### 1. What data should be used for probing
 
 The naive implementation would be to switch to the higher layer every `x` seconds and observe the network.
 This, however, may lead to periodic video rebuffering and lower Quality of Experience (QoE).
 
 Another solution is to generate traffic by sending RTP padding packets.
+They contain only a header and some arbitrary data that should be ingored by the receiver.
 In this case, the server has full control over the amount of data being sent and therefore, it can probe with 
 different aggressiveness.
 
-The problem with padding packets is that they contain only zeros (except the last byte) so we end up sending
+> **Deeper dive into RTP padding packet**
+>
+> The presence of padding in the RTP packet is denoted by the `P` bit in the RTP header.
+> When it is set, the last byte in the RTP payload indicates the number of bytes that should be stripped out
+> including itself.
+> RFC doesn't impose any requirements as to the value of padding bytes.
+> In most cases, they are just zeros.
+> The last byte denoting the size of the padding indicates also the maximum size of the padding - 255.
+> You can read more about padding in the [RFC 3550 (sec. 5.1)][rtp-sec-5.1].
+
+The problem with padding packets is that they contain only padding so we end up sending
 a lot of garbage data, useless for the client.
 Fortunately, there is a solution which is called RTX.
 RTX is a shortcut for retransmissions and can be used instead of padding packets.
@@ -115,15 +129,6 @@ That's also the way libwebrtc chooses when the RTX extension is enabled.
 
 In our WebRTC implementation, we started with padding packets as they are easier to implement and give
 us pretty good results.
-
-The padding packet is an RTP packet that contains only padding in its payload.
-The presence of padding is denoted by the `P` bit in the RTP header.
-When it is set, the last byte in the RTP payload indicates the number of bytes that should be stripped out
-including itself.
-RFC doesn't impose any requirements as to the value of padding bytes.
-In most cases, they are just zeros.
-The last byte denoting the size of the padding indicates also the maximum size of the padding - 255.
-You can read more about padding in the [RFC 3550 (sec. 5.1)][rtp-sec-5.1].
 
 Here are some tips important when using padding packets:
 * padding packets can only be sent at the video frame boundary.
@@ -142,7 +147,7 @@ introduce security vulnerabilities) or just drop the packet.
 ### 2. How much to probe
 
 The estimation can increase at most by 8% per second.
-This means that there is no sense in probing much more than your estimation can increase.
+This means that there is no point in probing much more than your estimation can increase.
 E.g. if you send 2Mbps, the estimation will increase by 160kbps per second.
 Having in mind that the limit for 1280x720 resolution in chromium is ~2.5Mbps and
 Google Meet limits this bitrate even more to 1.5Mbps, picking 200kbps as a value for your prober should be enough.
