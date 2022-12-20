@@ -13,6 +13,12 @@ We entirely turned off simulcast, decreased resolution, changed codecs and downg
 Nothing helped.
 The only thing we noticed was that the problem was not occurring on pretty strong machines like those with the 12th gen i9 processors or when we disabled TWCC.
 
+Below, there are some plots from webrtc-internals dump that show the issue:
+
+![Frames Received](./frames_received.png)
+![Freezes Count](./freezes_count.png)
+![Packets Lost](./packets_lost.png)
+
 ## The explanation
 
 After implementing TWCC, a client can finally estimate its real bandwidth which in turn allows it to send video in
