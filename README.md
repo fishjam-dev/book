@@ -1,4 +1,4 @@
-# Jellyfish book
+# Jellybook
 
 Theoretical concepts behind general purpose media server.
 
