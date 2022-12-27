@@ -21,9 +21,9 @@ Below, there are some plots from webrtc-internals dump that show the issue:
 
 ## The explanation
 
-After implementing TWCC, a client can finally estimate its real bandwidth which in turn allows it to send video in
-higher resolution or with a lower compression level.
-The higher bitrate will result in some video frames (e.g. keyframes) being split across multiple RTP packets.
+After implementing TWCC, a client can finally estimate its real bandwidth (without TWCC enabled, a browser assumes 300kbps) 
+which in turn allows it to send video in a higher resolution or with a lower compression level.
+The higher bitrate results in some video frames (e.g. keyframes) being split across multiple RTP packets.
 This turned out to be challenging for our UDP socket which in Erlang is by default configured with a very small receive buffer.
 When the client sent a burst of RTP packets which represent one video frame, some of those packets were immediately dropped as
 they couldn't fit into the socket's receive buffer.
