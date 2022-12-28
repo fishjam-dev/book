@@ -1,4 +1,4 @@
-# Too small socket buffer a.k.a. packet loss in a local network
+# Packet loss in a local network
 
 ## The problem
 
@@ -7,7 +7,7 @@ On some of our machines, web browsers that were connected via our WebRTC SFU wer
 The QoE was terrible.
 The client was displaying something around 3 FPS.
 It didn't matter whether we were testing in a local or remote network.
-At the beginning, we thought that this was some kind of packet loss, but we couldn't understand how it might be possible
+At the beginning, we thought that this was some kind of packet loss, but we couldn't understand how it was possible
 in the local network.
 We completely turned off simulcast, decreased resolution, changed codecs and downgraded web browsers.
 Nothing helped.
