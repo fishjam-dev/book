@@ -1,6 +1,8 @@
 # Active Speaker Detection
 
-A common feature in video conferencing software is active speaker detection. It is a small feature, but one that the user would feel weird without. Oftentimes, it is visualised by highlighting the user's tile while they are talking.
+A common feature in video conferencing software is active speaker detection.
+It is a small feature, but one that the user would feel weird without.
+Oftentimes, it is visualised by highlighting the user's tile while they are talking.
 Other use cases include deciding which participants should be shown on the screen.
 This can be implementedby using historical data about their voice activity.
 
@@ -10,27 +12,17 @@ WebRTC standard provides tools that make it easy and convenient to implement thi
 ## Audio Level Header extension
 RFC 6464 defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.
 
-The Extension carries the information about the audio level in `-dBov` with values from 0 to 127. Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
+The Extension carries the information about the audio level in `-dBov` with values from 0 to 127.
+Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
 The fact that values are negative is a consequence of a definition of the `dBov` unit.
 
-RFC 6464 also defines an optional flag bit "V". When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.
+RFC 6464 also defines an optional flag bit "V".
+When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.
 
 ### What is `dBov`
-`dBov` is defined as the level (in decibels) relative to the overload point of the system.
+`dBov` is defined as the level (in [decibels](https://en.wikipedia.org/wiki/Decibel)) relative to the overload point of the system.
 In this context, an overload point is the highest-intensity signal encodable by the payload format.
-
-All of that is well and good, but how does that translate into something readable? Well, let's start with the "highest-intensity signal encodable by the payload format".
-It's simply the loudest volume that you could encode into the given codec, usually OPUS.
-
-Then there is an issue of decibels.
-There are two things that you need to know about decibels:
-1. It's a unit of relative intensity, meaning you need to define a base energy level.
-In the case of the commonly used dB scale, that relative number is roughly the quietest sound that a human can hear.
-In the case of `dBox`, this level is the loudest sound that can be encoded.
-2. Decibel is a logarithmic value.
-The base of the logarithm differs on application, but usually it's 10.
-Simply put, the `db` value tells you how many times you need to multiply the base level by 10 to get the measured value.
-In the case of negative numbers, we divide by 10 instead of multiplying.
+In simpler terms, the overload point is the loudest possible sound that can be encoded into the codec.
 
 ## Audio Level processing
 You could use the flag bit "V" if available, but we don't recommend using it for the production environment for 2 reasons:
@@ -57,7 +49,8 @@ You then calculate the average volume of the packet and apply the threshold to t
 If the threshold is exceeded, speech is marked on the audio track.
 
 There are two parameters in this algorithm that you can tweak:
-1. `threshold` to tweak the sensitivity concerning the volume. You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.
+1. `threshold` to tweak the sensitivity concerning the volume.
+   You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.
 2. Time window duration to tweak sensitivity to detect short, but loud sounds.
 
 ### Detecting silence
@@ -67,6 +60,7 @@ For that reason, we need to apply an additional condition to silence detection -
 
 ### Things to watch out for during implementation
 In no particular order:
-- WebRTC usually uses UDP under the hood, so packets will arrive out of order. You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.
+- WebRTC usually uses UDP under the hood, so packets will arrive out of order.
+  You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.
 - Remember that you're dealing with `-dBov`. The absolute value for silence is `127`, and the loudest possible sound gets `0`!
 
