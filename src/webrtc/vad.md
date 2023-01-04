@@ -58,7 +58,7 @@ If the threshold is exceeded, speech is marked on the audio track.
 
 There are two parameters in this algorithm that you can tweak:
 1. `threshold` to tweak the sensitivity concerning the volume. You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.
-2. Time window duration to tweak sensitivity to short, but loud sounds.
+2. Time window duration to tweak sensitivity to detect short, but loud sounds.
 
 ### Detecting silence
 Detecting silence uses the same idea of a time window and comparing average volume to the threshold as detecting speech.
