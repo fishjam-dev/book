@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">3.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">3.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="webrtc/vad.html"><strong aria-hidden="true">2.2.</strong> Active Speaker Detection</a></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">3.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">3.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -150,7 +150,7 @@
 we got priceless knowledge and experience.
 In a lot of cases, to make something work we had to dive into an extremely complex code.
 Many times we reached the ends of the Internet...</p>
-<p>This book is an effort to collect everything we learned, read, discovered or invented both for us - developers of Jellyfish media server and for you - little travelers willing to create your own media server.</p>
+<p>This book is an effort to collect everything we learned, read, discovered or invented both for us - developers of Jellyfish media server and for you - curious travelers willing to create your own media server.</p>
 <p>Happy reading!</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="webrtc"><a class="header" href="#webrtc">WebRTC</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="webrtc-congestion-control"><a class="header" href="#webrtc-congestion-control">WebRTC Congestion Control</a></h1>
@@ -289,6 +289,67 @@ This, however, means that the server might do unnecessary work pretty often, eve
 Probe e.g. 10 seconds after lowering the resolution.
 If the network is still unstable, try again in 20 seconds.
 If the situation doesn't change, wait 40 seconds and so on.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="active-speaker-detection"><a class="header" href="#active-speaker-detection">Active Speaker Detection</a></h1>
+<p>A common feature in video conferencing software is active speaker detection.
+It is a small feature, but one that the user would feel weird without.
+Oftentimes, it is visualised by highlighting the user's tile while they are talking.
+Other use cases include deciding which participants should be shown on the screen.
+This can be implemented by using historical data about their voice activity.</p>
+<p>As you can see, voice activity detection is a small, but important piece of any WebRTC implementation.
+WebRTC standard provides tools that make it easy and convenient to implement this in your Selective Forwarding Unit.</p>
+<h2 id="audio-level-header-extension"><a class="header" href="#audio-level-header-extension">Audio Level Header extension</a></h2>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6464">RFC 6464</a> defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.</p>
+<p>The Extension carries the information about the audio level in <code>-dBov</code> with values from 0 to 127.
+Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
+The fact that values are negative is a consequence of a definition of the <code>dBov</code> unit.</p>
+<blockquote>
+<p><strong>What is <code>dBov</code></strong></p>
+<p><code>dBov</code> is defined as the level in <a href="https://en.wikipedia.org/wiki/Decibel">decibels</a> relative to the overload point of the system.
+In this context, an overload point is the highest-intensity signal encodable by the payload format.
+In simpler terms, the overload point is the loudest possible sound that can be encoded into the codec.</p>
+</blockquote>
+<p><a href="https://www.rfc-editor.org/rfc/rfc6464">RFC 6464</a> also defines an optional flag bit &quot;V&quot;.
+When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.</p>
+<p>Hopefully, you now have some understanding of the value in the <code>level</code> field, and we can jump right into the algorithm.
+Don't worry, it's not difficult at all.</p>
+<h2 id="audio-level-processing"><a class="header" href="#audio-level-processing">Audio Level processing</a></h2>
+<p>You could use the flag bit &quot;V&quot; if available, but we don't recommend using it for the production environment for 2 reasons:</p>
+<ol>
+<li>It is optional, so you cannot be sure it will always be there.</li>
+<li>Implementation isn't standardized, meaning that you can have inconsistent behavior depending on the sender.</li>
+</ol>
+<p>It is therefore worth considering implementing your algorithm based purely on the <code>level</code> field.</p>
+<h3 id="detecting-speech"><a class="header" href="#detecting-speech">Detecting speech</a></h3>
+<p>The basic idea behind speech detection is a <em>threshold</em>.
+It is a volume that separates silence from speech.
+Marking audio packets as either speech or silence is straightforward:</p>
+<ul>
+<li>if the volume is higher than the threshold, the packet should be considered speech</li>
+<li>if otherwise, it should be considered silence.</li>
+</ul>
+<p>However, human speech doesn't have a constant volume.
+Humans also take small breaks inbetween words.
+At 10 Hz, you can detect these, so while taking into consideration that only one packet at a time isn't good enough, we need to look at the bigger picture.</p>
+<p>The simplest and most effective way to implement it is to use a time window.
+You then calculate the average volume of the packet and apply the threshold to that value.
+If the threshold is exceeded, speech is marked on the audio track.</p>
+<p>There are two parameters in this algorithm that you can tweak:</p>
+<ol>
+<li><code>threshold</code> to tweak the sensitivity concerning the volume.
+You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.</li>
+<li>Time window duration to tweak sensitivity to detect short, but loud sounds.</li>
+</ol>
+<h3 id="detecting-silence"><a class="header" href="#detecting-silence">Detecting silence</a></h3>
+<p>Detecting silence uses the same idea of a time window and comparing average volume to the threshold as detecting speech.
+We have found it rather tricky to tweak the values in such a way that speech is detected swiftly, and silence detection isn't too aggressive.
+For that reason, we need to apply an additional condition to silence detection - a time for which the average value must be below the threshold to mark voice activity on the audio stream as silence.</p>
+<h3 id="things-to-watch-out-for-during-implementation"><a class="header" href="#things-to-watch-out-for-during-implementation">Things to watch out for during implementation</a></h3>
+<p>In no particular order:</p>
+<ul>
+<li>WebRTC usually uses UDP under the hood, so packets will arrive out of order.
+You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.</li>
+<li>Remember that you're dealing with <code>-dBov</code>. The absolute value for silence is <code>127</code>, and the loudest possible sound gets </li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="the-great-chapter-of-bugs"><a class="header" href="#the-great-chapter-of-bugs">The Great Chapter of Bugs</a></h1>
 <p>During the development of Jellyfish, we encountered a wide variety of bugs that took us days, weeks or even
