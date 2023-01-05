@@ -10,19 +10,23 @@ As you can see, voice activity detection is a small, but important piece of any 
 WebRTC standard provides tools that make it easy and convenient to implement this in your Selective Forwarding Unit.
 
 ## Audio Level Header extension
-RFC 6464 defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.
+[RFC 6464](https://www.rfc-editor.org/rfc/rfc6464) defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.
 
 The Extension carries the information about the audio level in `-dBov` with values from 0 to 127.
 Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
 The fact that values are negative is a consequence of a definition of the `dBov` unit.
 
-RFC 6464 also defines an optional flag bit "V".
+> **What is `dBov`**
+>
+> `dBov` is defined as the level in [decibels](https://en.wikipedia.org/wiki/Decibel) relative to the overload point of the system.
+> In this context, an overload point is the highest-intensity signal encodable by the payload format.
+> In simpler terms, the overload point is the loudest possible sound that can be encoded into the codec.
+
+[RFC 6464](https://www.rfc-editor.org/rfc/rfc6464) also defines an optional flag bit "V".
 When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.
 
-### What is `dBov`
-`dBov` is defined as the level (in [decibels](https://en.wikipedia.org/wiki/Decibel)) relative to the overload point of the system.
-In this context, an overload point is the highest-intensity signal encodable by the payload format.
-In simpler terms, the overload point is the loudest possible sound that can be encoded into the codec.
+Hopefully, you now have some understanding of the value in the `level` field, and we can jump right into the algorithm.
+Don't worry, it's not difficult at all.
 
 ## Audio Level processing
 You could use the flag bit "V" if available, but we don't recommend using it for the production environment for 2 reasons:
@@ -30,8 +34,6 @@ You could use the flag bit "V" if available, but we don't recommend using it for
 2. Implementation isn't standardized, meaning that you can have inconsistent behavior depending on the sender.
 
 It is therefore worth considering implementing your algorithm based purely on the `level` field.
-Hopefully, you now have some understanding of the value in the `level` field, and we can jump right into the algorithm.
-Don't worry, it's not difficult at all.
 
 ### Detecting speech
 The basic idea behind speech detection is a *threshold*.
@@ -62,5 +64,5 @@ For that reason, we need to apply an additional condition to silence detection -
 In no particular order:
 - WebRTC usually uses UDP under the hood, so packets will arrive out of order.
   You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.
-- Remember that you're dealing with `-dBov`. The absolute value for silence is `127`, and the loudest possible sound gets `0`!
+- Remember that you're dealing with `-dBov`. The absolute value for silence is `127`, and the loudest possible sound gets 
 
