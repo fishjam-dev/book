@@ -4,7 +4,7 @@ A common feature in video conferencing software is active speaker detection.
 It is a small feature, but one that the user would feel weird without.
 Oftentimes, it is visualised by highlighting the user's tile while they are talking.
 Other use cases include deciding which participants should be shown on the screen.
-This can be implementedby using historical data about their voice activity.
+This can be implemented by using historical data about their voice activity.
 
 As you can see, voice activity detection is a small, but important piece of any WebRTC implementation.
 WebRTC standard provides tools that make it easy and convenient to implement this in your Selective Forwarding Unit.
@@ -56,7 +56,7 @@ There are two parameters in this algorithm that you can tweak:
 ### Detecting silence
 Detecting silence uses the same idea of a time window and comparing average volume to the threshold as detecting speech.
 We have found it rather tricky to tweak the values in such a way that speech is detected swiftly, and silence detection isn't too aggressive.
-For that reason, we need to apply an additional condition to silence detection -a time for which the average value must be below the threshold to mark voice activity on the audio stream as silence.
+For that reason, we need to apply an additional condition to silence detection - a time for which the average value must be below the threshold to mark voice activity on the audio stream as silence.
 
 ### Things to watch out for during implementation
 In no particular order:
