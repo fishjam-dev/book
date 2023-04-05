@@ -7,9 +7,11 @@ When we were working with RTSP, we attempted to:
 
 Unfortunately, to decode the stream, we must first deal with several issues.
 
+Each issue described below was present (with varying consequences, usually less severe for HLS) in both of the conversions we attempted.
+
 ## Keyframes
-Our implementation of a WebRTC Engine, the heart of Jellyfish, requires new streams to start with a keyframe (IDR frame).
-This posed a problem: RTSP by itself does not provide a way to request that a keyframe be transmitted in the RTP stream.
+If a new WebRTC peer joins an existing room, we will need to request keyframes (IDR frames) from all other participants.
+This poses a problem: RTSP by itself does not provide a way to request that a keyframe be transmitted in the RTP stream.
 
 > The issues we write about in this section could maybe be alleviated by sending an RTCP FIR (Full Intra Request),
 > RTCP PLI (Picture Loss Indication) or RTCP NACK (Negative Acknowledgement) for the lost packets.
@@ -69,7 +71,8 @@ We're just checking if something is a keyframe, so this means we're sending
 P  2  3  4  5  7  8  P  6  9  P  10
 0  1  2  3  4  5  6  7  8  9  10 11    - new sequence numbers
 ```
-The issue is obvious, we can't number the packets sequentially in the order we receive them.
+The issue is obvious, the packet with original sequence number 6 is now *after* the packet with original sequence number 7.
+This means we can't simply number the packets sequentially in the order we receive them.
 
 OK, then suppose `new = old + offset`, where `offset` - amount of packets injected by us up to that point.
 In sequence:
@@ -77,14 +80,15 @@ In sequence:
 P  2  3  4  5  P  6  7  8  9  P  10
 2  3  4  5  6  7  8  9  10 11 12 13    - new sequence numbers
 ```
-Seems good, right? Unfortunately, the same pitfall applies here. Consider, once again, the previous order:
+Seems good, right? It's certainly better, as it will correctly number regular frames which arrived out of order.
+Unfortunately, this won't be the case with keyframes arriving out of order. Consider, once again, the previous example:
 ```
 P  2  3  4  5  7  8  P  6  9  P  10
 2  3  4  5  6  8  9  ?? 7  10 11 12
 ```
 We only have one spot left (number 7) for both parameters and I-frame 6. Not ideal.
 
-Alright then, let's say `new = old * 2`, and if we need to inject a packet, just use the free timestamp.
+Alright then, let's say `new = old * 2`, and if we need to inject a packet, just use the free number.
 In sequence:
 ```
 P  2  3  4  5  P  6  7  8  9  P  10

@@ -1,4 +1,4 @@
-# Receiving a stream using RTSP
+# Setting up the connection
 To receive a stream from an RTSP server, at least two separate connections need to be made:
 - one for session negotiation and signalling, using RTSP (usually over TCP)
 - others for stream delivery (one per each stream), using RTP (usually over UDP)
@@ -9,9 +9,12 @@ An example setup could look like this:
 ## Signalling
 The client sends various RTSP requests to the server, the most important ones being DESCRIBE, SETUP and PLAY.
 The server responds to these requests accordingly, depending on the current state of the session.
-
-These responses contain information necessary to set up the delivery of the streams, most importantly RTP mapping,
-the URI to use for control of that particular stream, and FMTP, the media format parameters.
+- For a DESCRIBE request, the response will include information about codecs used by the server,
+how many media streams it can offer, etc.
+- SETUP requests must be targeted at a given stream. They communicate to the server that we wish to receive the stream,
+and the response contains information such as ports between which the stream will flow.
+- PLAY requests must be targeted at a given stream which has already been set up. After receiving a valid PLAY request,
+the server will start sending media.
 
 RTSP servers have a given timeout for sessions - if no requests are made within that timeout, the session is terminated.
 For that reason, clients need to be sending keep-alive messages to the server regularly, or else they'll stop receiving
