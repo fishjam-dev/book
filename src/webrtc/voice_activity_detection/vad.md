@@ -25,11 +25,11 @@ _It's just thresholding with extra steps_
 
 Voice Activity Detection (or _VAD_ for short) is a technology that enables the automatic detection of speech activity in an audio signal. This is an essential tool for various applications such as speech recognition, speaker diarization, and voice communication systems.
 
-In Videoroom, VAD is implemented as a part of the audio processing pipeline. When a user speaks, the VAD algorithm detects the presence of speech activity by analyzing the noise levels of the audio signal.
+In video conference applications VAD is implemented as a part of the audio processing pipeline. When a user speaks, the VAD algorithm detects the presence of speech activity by analyzing the noise levels of the audio signal.
 
-In Videoroom VAD is used for showing an indicator that the user is speaking. It can be seen in the upper left corner of the video tile.
+For example VAD can be used for showing an indicator that the user is speaking. In a picture below it can be seen in the upper left corner of the video tile.
 
-![Vad indication](assets/user_with_vad_indicator.png)
+![Vad indication](user_with_vad_indicator.png)
 
 ## What does the WebRTC protocol provide?
 
@@ -66,11 +66,11 @@ So it's time to implement a different approach...
 
 First let's define the inputs and outputs of our function that would perform VAD. The function takes audio noise levels and the noise threshold value as inputs. It returns an information of whether the given audio levels indicate if the person is speaking based on the given threshold.
 
-![vad_func](assets/vad_func.png)
+![vad_func](vad_func.png)
 
 ### The main idea
 
-The main idea and many of the intricacies of the algorithm are provided in the original paper (that is [Dominant Speaker Identification for Multipoint Videoconferencing" by Ilana Volfin and Israel Cohenthat](https://israelcohen.com/wp-content/uploads/2018/05/IEEEI2012_Volfin.pdf)). The following implementation was inspired by it.
+The main idea and many of the intricacies of the algorithm are provided in the original paper (that is [_Dominant Speaker Identification for Multipoint Videoconferencing_ ](https://israelcohen.com/wp-content/uploads/2018/05/IEEEI2012_Volfin.pdf) by Ilana Volfin and Israel Cohenthat). The following implementation was inspired by it.
 
 Basically we take the input levels and group them into three layers of intervals: _immediates_, _mediums_ and _longs_. Intervals contain a finite number of subunits (longs contain mediums, mediums contain immediates and immediates contain level). The intervals are then thresholded and labeled as _active_ or _inactive_. Based on the number of active intervals an _activity score_ is computed for each kind of intervals.
 
@@ -95,23 +95,23 @@ There are also internal parameters of the algorithm like:
 
 To compute them we take the input levels.
 
-![levels](assets/levels.png)
+![levels](levels.png)
 
 Then we combine them into immediates. Immediates are counted as active or inactive based on the threshold provided.
 
-![immediates](assets/immediates.png)
+![immediates](immediates.png)
 
 The numbers indicate the number of levels that are above the threshold. Since `@n1` is equal to one, immediates only have values 0 or 1.
 
 After that the mediums are computed in a similar fashion.
 
-![mediums](assets/mediums.png)
+![mediums](mediums.png)
 
 The red color indicates an inactive unit, whereas green means an active one. The numbers on mediums indicate counted subunits below.
 
 Then the longs are counted.
 
-![longs](assets/longs.png)
+![longs](longs.png)
 
 And the interval computations are done!
 
@@ -128,40 +128,31 @@ After computing the intervals, we take the most recent one from all 3 lengths an
 The computed values are the also thresholded with another internal parameters named `@immediate_score_threshold`, `@medium_score_threshold` and `@long_score_threshold`.
 If all the activity scores are above their threshold, the function returns `:speech`, otherwise `:false`.
 
-![activity_score](assets/activity_score.png)
+![activity_score](activity_score.png)
 
 The activity score formula is taken directly from the paper. It is a loglikelihood of two probabilities: probability of speech and probability of silence. It is based on the number of active subunits in a unit. The details are provided in the aforementioned paper.
 
 ## Implementation details
 
-The algorithm described above has it's implementation in the `IsSpekingEstimator` module of the `membrane_rtp_plugin`. It is then applied in the `VAD` membrane element located in the same plugin.
+The algorithm described above was implemented as part of [`Jellyfish`](https://github.com/jellyfish-dev). The implementation also handles:
 
-The membrane element:
+- updating the queue in which the audio levels are stored
+- rolling over if a late packet has been delivered
+- sending information if the VAD status has changed
 
-- updates the queue in which the audio levels are stored
-- rolls over if a packet with a different timestamp has been delivered
-- sends the information only if the VAD status has changed
+Those steps are essential for the VAD to work properly in video conference context, so please, remember that in your own implementation.
 
 **Other useful information**:
 
-1.  One packet = one membrane buffer.
-2.  Every packet has about 20 ms of audio.
-3.  Due to the current values of the `@nx` parameters, the algorithm needs less than 1.5 sec of initial audio to work.
-4.  WebRTC usually uses UDP under the hood, so packets will arrive out of order.
+1.  WebRTC usually uses UDP under the hood, so packets will arrive out of order.
     You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.
-5.  Remember that you're dealing with `-dBov`. The absolute value for silence is `127`, and the loudest possible sound gets
+2.  Remember that you're dealing with `-dBov`. The absolute value for silence is `127`, and the loudest possible sound gets
 
-## _Tests, tests tests!_
-
-As every membrane element, this module is tested thoughtfully and thoroughly.
-
-### Unit tests
-
-The unit tests are implemented in the `VADTest` and `IsSpeakingEstimator` modules.
+## _Tests, tests, tests!_
 
 ### Manual tests
 
-The process of choosing internal parameters of the algorithm was not a trivial task. To have a better understanding of the inner workings of the algorithm, the vad was added to Videoroom and checked in terms of the return value and the activity scores it had produced.
+The process of choosing internal parameters of the algorithm was not a trivial task. To have a better understanding of the inner workings of the algorithm, the VAD implementation was added to [a video conference application](https://github.com/membraneframework/membrane_videoroom) and checked in terms of the return value and the activity scores it had produced.
 
 The experiment consisted of telling the lines from Hamlet:
 
@@ -172,25 +163,25 @@ _zwierz zdrów przebiega knieje_ (3.5 - 5.75 s)
 
 Then the audio levels along with the threshold and the actual results were plotted with the results given below.
 
-![levels](assets/level_per_packet.png)
+![levels](level_per_packet.png)
 
 Not every packet with a level above the threshold has `True` value. That is expected because we don't want the algorithm to be always active.
 
 The activity scores were as follows:
 
-![immediates](assets/immediate_score_per_packet.png)
+![immediates](immediate_score_per_packet.png)
 
-![mediums](assets/medium_score_per_packet.png)
+![mediums](medium_score_per_packet.png)
 
-![longs](assets/long_score_per_packet.png)
+![longs](long_score_per_packet.png)
 
-Small activity scores mean that the packets above the threshold quickly generate `:speech` as output, but don't stop immediately. Of course it can be changed later.
+Small activity scores mean that the packets above the threshold quickly generate `:speech` as output, but don't stop immediately. It can be changed by changing the algorithm parameters if needed.
 
 ### Performance
 
-Some small performance tests were done in order to check if the algorithm is well-optimized and can serve in the real time communication environment.
+Some small performance tests were done in order to check if the algorithm implemented in [`Jellyfish`](https://github.com/jellyfish-dev) is well-optimized and can serve in the real time communication environment.
 
-The time of the whole `VAD.handle_process` was usually around 60 μs, which means no significant overhead. The number of reductions was around 210. This matches our needs.
+The time of the whole process was usually around 60 μs, which means no significant overhead. The number of reductions (function calls) was around 210. This matches our needs.
 
 ## Conclusions
 
