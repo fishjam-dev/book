@@ -32,6 +32,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -69,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -80,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="webrtc/vad.html"><strong aria-hidden="true">2.2.</strong> Active Speaker Detection</a></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">3.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">3.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html" class="active"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="webrtc/voice_activity_detection/vad.html"><strong aria-hidden="true">2.2.</strong> Voice Activity Detection</a></li></ol></li><li class="chapter-item expanded "><a href="rtsp/index.html"><strong aria-hidden="true">3.</strong> RTSP</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="rtsp/stream_setup.html"><strong aria-hidden="true">3.1.</strong> Receiving the stream</a></li><li class="chapter-item expanded "><a href="rtsp/stream_decoding.html"><strong aria-hidden="true">3.2.</strong> Decoding the stream</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="rtsp/conversions/rtsp_to_webrtc.html"><strong aria-hidden="true">3.2.1.</strong> RTSP to WebRTC</a></li><li class="chapter-item expanded "><a href="rtsp/conversions/rtsp_to_hls.html"><strong aria-hidden="true">3.2.2.</strong> RTSP to HLS</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">4.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">4.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -194,5 +197,6 @@ Many times we reached the ends of the Internet...</p>
         <!-- Custom JS scripts -->
 
 
+    </div>
     </body>
 </html>

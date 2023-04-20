@@ -1,0 +1,300 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>RTSP to WebRTC - Jellybook</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var html = document.querySelector('html');
+            var sidebar = null;
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../../webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="../../webrtc/voice_activity_detection/vad.html"><strong aria-hidden="true">2.2.</strong> Voice Activity Detection</a></li></ol></li><li class="chapter-item expanded "><a href="../../rtsp/index.html"><strong aria-hidden="true">3.</strong> RTSP</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../rtsp/stream_setup.html"><strong aria-hidden="true">3.1.</strong> Receiving the stream</a></li><li class="chapter-item expanded "><a href="../../rtsp/stream_decoding.html"><strong aria-hidden="true">3.2.</strong> Decoding the stream</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../rtsp/conversions/rtsp_to_webrtc.html" class="active"><strong aria-hidden="true">3.2.1.</strong> RTSP to WebRTC</a></li><li class="chapter-item expanded "><a href="../../rtsp/conversions/rtsp_to_hls.html"><strong aria-hidden="true">3.2.2.</strong> RTSP to HLS</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../bugs/index.html"><strong aria-hidden="true">4.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">4.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky bordered">
+                    <div class="left-buttons">
+                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Jellybook</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/jellyfish-dev/book" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="rtsp-to-webrtc"><a class="header" href="#rtsp-to-webrtc">RTSP to WebRTC</a></h1>
+<p>Both RTSP and WebRTC use RTP for stream transportation. This may lead you to think it'd be enough to simply forward
+the received RTP packets to WebRTC peers, perhaps changing their SSRC in the process. <em>How hard can it be?</em></p>
+<p>Sadly, it's not as easy as it might seem.</p>
+<h2 id="keyframes"><a class="header" href="#keyframes">Keyframes</a></h2>
+<p>If a new WebRTC peer joins an existing room, we will need to request keyframes (IDR frames) from all other participants.
+This poses a problem: RTSP itself does not provide a way to request that a keyframe be transmitted in the RTP stream.</p>
+<blockquote>
+<p>The issues we write about in this section could maybe be alleviated by sending an RTCP FIR (Full Intra Request),
+RTCP PLI (Picture Loss Indication) or RTCP NACK (Negative Acknowledgement) for the lost packets.
+We won't write about this solution, as not all RTSP servers may support such requests.
+Refer to <a href="https://www.rfc-editor.org/rfc/rfc4585">RFC 4585</a>, <a href="https://www.rfc-editor.org/rfc/rfc5104">RFC 5104</a>
+and <a href="https://www.rfc-editor.org/rfc/rfc6642">RFC 6642</a> for more details.</p>
+</blockquote>
+<p>Usually, keyframe frequency may only be configured server-side (globally for all clients) in encoder settings.
+The server will send a keyframe to each recipient every <em>n</em> frames, and that's about it.</p>
+<p>The implications? Real-life example: We had an RTSP camera set up (default settings) so that it had a framerate of 25 fps and transmitted an IDR frame
+every 32nd frame, so every 1.28 seconds. This meant that, worst case scenario, you connected to a stream and had to wait over
+a second before being able to decode the stream, with no way to shorten this delay other than changing the server's encoder settings.</p>
+<p>What's more: Once an IDR frame is lost, it's lost. You can't really do anything on the client side, which means no retransmissions
+(unless you use RTP over TCP or the server handles RTCP NACK/PLI).</p>
+<h2 id="stream-parameters"><a class="header" href="#stream-parameters">Stream parameters</a></h2>
+<p>You may know that in order to decode a video stream encoded using H264, you need stream parameters, SPS (Sequence Parameter Set)
+and PPS (Picture Parameter Set). These may be transmitted in-band (together with the video stream, contained inside RTP
+packets) - if that's the case, no problems here. However, they may also be transmitted out-of-band, meaning they're absent
+in the video stream, and have to be delivered in some other way (and that's precisely what most RTSP servers will be doing).</p>
+<p>Usually, RTSP servers will transmit stream parameters (together with other useful info) inside a response to the DESCRIBE request.
+They will be encoded using SDP (Session Description Protocol, <a href="https://www.rfc-editor.org/rfc/rfc8866">RFC 8866</a>,
+parameters: <a href="https://www.rfc-editor.org/rfc/rfc6871">RFC 6871</a>).</p>
+<p>When it comes to WebRTC, the parameters <strong>must</strong> be present in the stream. This means that one needs to parse the parameters from the response,
+then somehow include them within the stream itself.</p>
+<p><em>I'm sure injecting them won't cause any significant problems...</em></p>
+<h3 id="injecting-parameters-into-the-stream"><a class="header" href="#injecting-parameters-into-the-stream">Injecting parameters into the stream</a></h3>
+<p>Should you wish to include the parameters in the RTP stream more than once (perhaps adding them before every keyframe,
+so that new peers are able to decode the stream if they joined later on), you immediately run into issues regarding packet numbering. </p>
+<p>Suppose we have the following RTP packets being sent by the server:</p>
+<pre><code>0  1  2  3  4  5  6  7  8  9  10    - sequence number
+      I           I           I     - I if keyframe
+</code></pre>
+<p>Let's say we have the SPS and PPS (delivered out-of-band) parsed and payloaded into an RTP packet <code>&quot;P&quot;</code> that we may inject into the stream at will.
+Let's also assume that we will drop packets until we get the first keyframe, then inject the parameters before every keyframe in the stream.</p>
+<p>If we inject some packets into the stream, we have to change the sequence numbers of all of the following packets.
+For now, let's say we're just going to assign them entirely new numbers, sequentially.</p>
+<p>If we receive the packets in sequence, we'll be sending:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10    - original sequence numbers
+0  1  2  3  4  5  6  7  8  9  10 11    - new sequence numbers
+</code></pre>
+<p>Suppose, however, that packet 6 arrived out of order, after packets 7 and 8:</p>
+<pre><code>0  1  2  3  4  5  7  8  6  9  10       - packets received by client
+</code></pre>
+<p>We're just checking if something is a keyframe, so this means we're sending</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+0  1  2  3  4  5  6  7  8  9  10 11    - new sequence numbers
+</code></pre>
+<p>The issue is obvious: the packet with the original sequence number 6 is now <em>after</em> the packet with the original sequence number 7.
+This means that we can't simply number the packets sequentially in the order we receive them.</p>
+<p>OK, then suppose <code>new = old + offset</code>, where <code>offset</code> - amount of packets injected by us up to that point.
+In sequence:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10
+2  3  4  5  6  7  8  9  10 11 12 13    - new sequence numbers
+</code></pre>
+<p>Seems good, right? It's certainly better, as it will correctly number regular frames, which arrived out of order.
+Unfortunately, this won't be the case with keyframes arriving out of order. Consider, once again, the previous example:</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+2  3  4  5  6  8  9  ?? 7  10 11 12
+</code></pre>
+<p>We only have one spot left (number 7) for both parameters and I-frame 6. Not ideal.</p>
+<p>Alright then, let's say <code>new = old * 2</code>, and if we need to inject a packet, just use the free number.
+In sequence:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10
+3  4  6  8  10 11 12 14 16 18 19 20
+</code></pre>
+<p>And, in the changed order:</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+3  4  6  8  10 14 16 11 12 18 19 20
+</code></pre>
+<p>Problem solved? Not quite. The issue is, this might cause some element downstream to think there's packet loss present,
+because of the gaps. This, in turn, may cause RTCP NACKs to be sent for nonexistent packets, and possibly other unpleasant
+things to follow.</p>
+<p>Of course, there's the option of adding the parameters before EVERY frame - if you're alright with wasting a lot of bandwidth, that is.</p>
+<p>Another possible solution would be to use an ordering buffer of an arbitrary size. This, however, introduces more delay...</p>
+<p>And now the fun part: To make things simpler, we assumed an RTP packet to contain exactly one frame. This doesn't have to
+be the case! RTP packets can also have multiple different frames (with the same or different timestamps), or just a part
+of a single frame in their payload. Refer to <a href="https://www.rfc-editor.org/rfc/rfc3984">RFC 3984</a> if you wish to learn more.</p>
+<blockquote>
+<p>All of this contains some oversimplifications (Access Units =/= Network Abstraction Layer Units). Refer to
+<a href="https://www.itu.int/rec/dologin_pub.asp?lang=e&amp;id=T-REC-H.264-201602-S!!PDF-E&amp;type=items">the official H.264 specification</a>
+if you wish to learn even more.</p>
+</blockquote>
+<h3 id="but-what-if-we-didnt-have-to-add-more-packets"><a class="header" href="#but-what-if-we-didnt-have-to-add-more-packets">But what if we didn't have to add more packets?</a></h3>
+<p>Suppose we simply took each packet with an I-frame, extracted its payload, attached SPS and PPS before it,
+and payloaded it again, onto a single RTP packet with the same ordering number, just maybe a different packet type
+and a different size? No numbering/reordering issues then!</p>
+<p>Unfortunately, that would be too good to be true. Increasing payload size means you run the risk
+of exceeding the network's MTU, in which case, the modified packets will get dropped along the way.</p>
+<p>But surely we could add parameters to payload, then fragment if necessary so that each individual packet is below the MTU?
+Maybe that's the solution we've been looking for-- oh, wait, this runs headfirst into the very same numbering issues as before.</p>
+<p>To summarise, in most cases, if one wishes to inject H264 parameters into the RTP stream itself, depayloading, parsing
+and repackaging the entire stream is the only viable option.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../rtsp/stream_decoding.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next" href="../../rtsp/conversions/rtsp_to_hls.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../rtsp/stream_decoding.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next" href="../../rtsp/conversions/rtsp_to_hls.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

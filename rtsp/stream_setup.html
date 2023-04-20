@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Active Speaker Detection - Jellybook</title>
+        <title>Receiving the stream - Jellybook</title>
 
 
         <!-- Custom HTML head -->
@@ -32,6 +32,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "../";
@@ -69,10 +70,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -80,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="../webrtc/vad.html" class="active"><strong aria-hidden="true">2.2.</strong> Active Speaker Detection</a></li></ol></li><li class="chapter-item expanded "><a href="../bugs/index.html"><strong aria-hidden="true">3.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">3.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="../webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="../webrtc/voice_activity_detection/vad.html"><strong aria-hidden="true">2.2.</strong> Voice Activity Detection</a></li></ol></li><li class="chapter-item expanded "><a href="../rtsp/index.html"><strong aria-hidden="true">3.</strong> RTSP</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../rtsp/stream_setup.html" class="active"><strong aria-hidden="true">3.1.</strong> Receiving the stream</a></li><li class="chapter-item expanded "><a href="../rtsp/stream_decoding.html"><strong aria-hidden="true">3.2.</strong> Decoding the stream</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../rtsp/conversions/rtsp_to_webrtc.html"><strong aria-hidden="true">3.2.1.</strong> RTSP to WebRTC</a></li><li class="chapter-item expanded "><a href="../rtsp/conversions/rtsp_to_hls.html"><strong aria-hidden="true">3.2.2.</strong> RTSP to HLS</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../bugs/index.html"><strong aria-hidden="true">4.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">4.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -144,77 +147,50 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="active-speaker-detection"><a class="header" href="#active-speaker-detection">Active Speaker Detection</a></h1>
-<p>A common feature in video conferencing software is active speaker detection.
-It is a small feature, but one that the user would feel weird without.
-Oftentimes, it is visualised by highlighting the user's tile while they are talking.
-Other use cases include deciding which participants should be shown on the screen.
-This can be implemented by using historical data about their voice activity.</p>
-<p>As you can see, voice activity detection is a small, but important piece of any WebRTC implementation.
-WebRTC standard provides tools that make it easy and convenient to implement this in your Selective Forwarding Unit.</p>
-<h2 id="audio-level-header-extension"><a class="header" href="#audio-level-header-extension">Audio Level Header extension</a></h2>
-<p><a href="https://www.rfc-editor.org/rfc/rfc6464">RFC 6464</a> defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.</p>
-<p>The Extension carries the information about the audio level in <code>-dBov</code> with values from 0 to 127.
-Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
-The fact that values are negative is a consequence of a definition of the <code>dBov</code> unit.</p>
-<blockquote>
-<p><strong>What is <code>dBov</code></strong></p>
-<p><code>dBov</code> is defined as the level in <a href="https://en.wikipedia.org/wiki/Decibel">decibels</a> relative to the overload point of the system.
-In this context, an overload point is the highest-intensity signal encodable by the payload format.
-In simpler terms, the overload point is the loudest possible sound that can be encoded into the codec.</p>
-</blockquote>
-<p><a href="https://www.rfc-editor.org/rfc/rfc6464">RFC 6464</a> also defines an optional flag bit &quot;V&quot;.
-When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.</p>
-<p>Hopefully, you now have some understanding of the value in the <code>level</code> field, and we can jump right into the algorithm.
-Don't worry, it's not difficult at all.</p>
-<h2 id="audio-level-processing"><a class="header" href="#audio-level-processing">Audio Level processing</a></h2>
-<p>You could use the flag bit &quot;V&quot; if available, but we don't recommend using it for the production environment for 2 reasons:</p>
-<ol>
-<li>It is optional, so you cannot be sure it will always be there.</li>
-<li>Implementation isn't standardized, meaning that you can have inconsistent behavior depending on the sender.</li>
-</ol>
-<p>It is therefore worth considering implementing your algorithm based purely on the <code>level</code> field.</p>
-<h3 id="detecting-speech"><a class="header" href="#detecting-speech">Detecting speech</a></h3>
-<p>The basic idea behind speech detection is a <em>threshold</em>.
-It is a volume that separates silence from speech.
-Marking audio packets as either speech or silence is straightforward:</p>
+                        <h1 id="setting-up-the-connection"><a class="header" href="#setting-up-the-connection">Setting up the connection</a></h1>
+<p>To receive a stream from an RTSP server, at least two separate connections need to be made:</p>
 <ul>
-<li>if the volume is higher than the threshold, the packet should be considered speech</li>
-<li>if otherwise, it should be considered silence.</li>
+<li>one for session negotiation and signalling, using RTSP (usually over TCP)</li>
+<li>others for stream delivery (one per each stream), using RTP (usually over UDP)</li>
 </ul>
-<p>However, human speech doesn't have a constant volume.
-Humans also take small breaks inbetween words.
-At 10 Hz, you can detect these, so while taking into consideration that only one packet at a time isn't good enough, we need to look at the bigger picture.</p>
-<p>The simplest and most effective way to implement it is to use a time window.
-You then calculate the average volume of the packet and apply the threshold to that value.
-If the threshold is exceeded, speech is marked on the audio track.</p>
-<p>There are two parameters in this algorithm that you can tweak:</p>
-<ol>
-<li><code>threshold</code> to tweak the sensitivity concerning the volume.
-You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.</li>
-<li>Time window duration to tweak sensitivity to detect short, but loud sounds.</li>
-</ol>
-<h3 id="detecting-silence"><a class="header" href="#detecting-silence">Detecting silence</a></h3>
-<p>Detecting silence uses the same idea of a time window and comparing average volume to the threshold as detecting speech.
-We have found it rather tricky to tweak the values in such a way that speech is detected swiftly, and silence detection isn't too aggressive.
-For that reason, we need to apply an additional condition to silence detection - a time for which the average value must be below the threshold to mark voice activity on the audio stream as silence.</p>
-<h3 id="things-to-watch-out-for-during-implementation"><a class="header" href="#things-to-watch-out-for-during-implementation">Things to watch out for during implementation</a></h3>
-<p>In no particular order:</p>
+<p>An example setup could look like this:
+<img src="./rtsp_connection.png" alt="RTSP connection" /></p>
+<h2 id="signalling"><a class="header" href="#signalling">Signalling</a></h2>
+<p>The client sends various RTSP requests to the server, the most important ones being DESCRIBE, SETUP and PLAY.
+The server responds to these requests accordingly, depending on the current state of the session.</p>
 <ul>
-<li>WebRTC usually uses UDP under the hood, so packets will arrive out of order.
-You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.</li>
-<li>Remember that you're dealing with <code>-dBov</code>. The absolute value for silence is <code>127</code>, and the loudest possible sound gets </li>
+<li>For a DESCRIBE request, the response will include information about codecs used by the server,
+how many media streams it can offer, etc.</li>
+<li>SETUP requests must be targeted at a given stream. They communicate to the server that we wish to receive the stream,
+and the response contains information such as ports between which the stream will flow.</li>
+<li>PLAY requests must be targeted at a given stream that has already been set up. After receiving a valid PLAY request,
+the server will start sending media.</li>
 </ul>
+<p>RTSP servers have a given timeout for sessions - if no requests are made within that timeout, the session is terminated.
+For that reason, clients need to send keep-alive messages to the server regularly, or else they'll stop receiving
+the stream once the timer is up. Most commonly, empty GET_PARAMETER requests are used as keep-alives; alternatively,
+some servers may extend the session automatically upon receiving an RTCP Receiver Report related to a given stream.</p>
+<h2 id="stream-delivery"><a class="header" href="#stream-delivery">Stream delivery</a></h2>
+<p>The client sends a separate RTSP SETUP request for each stream that they want to receive.
+These requests must contain the port or port range, where the client expects to receive the stream.</p>
+<p>Some RTSP servers may offer to set up two consecutive ports per stream - the first one for stream delivery
+and the second one for the exchange of RTCP messages.</p>
+<h2 id="creating-a-nat-binding"><a class="header" href="#creating-a-nat-binding">Creating a NAT binding</a></h2>
+<p>Since RTP stream delivery is initiated by the server, if the client is behind NAT, a binding won't be created by itself,
+and the stream won't reach the client. However, a simple hack can be used to combat this issue. During the negotiation,
+we receive the port(s) from which the server will send the RTP stream. If we then send any datagram (even with an empty payload)
+from the client port(s) configured during negotiation, to the server port(s) received, it will be enough to create a NAT binding.
+This solution will allow the stream to reach the client, even when using the most restrictive, symmetric NAT.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../webrtc/congestion_control/cc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../rtsp/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next" href="../bugs/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="../rtsp/stream_decoding.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -224,11 +200,11 @@ You probably don't want to get a jitter buffer involved, so make sure that your 
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../webrtc/congestion_control/cc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../rtsp/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next" href="../bugs/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next" href="../rtsp/stream_decoding.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -254,5 +230,6 @@ You probably don't want to get a jitter buffer involved, so make sure that your 
         <!-- Custom JS scripts -->
 
 
+    </div>
     </body>
 </html>

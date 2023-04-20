@@ -33,6 +33,7 @@
 
     </head>
     <body>
+    <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
             var path_to_root = "";
@@ -70,10 +71,12 @@
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
             var html = document.querySelector('html');
-            var sidebar = 'hidden';
+            var sidebar = null;
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
             }
             html.classList.remove('sidebar-visible');
             html.classList.add("sidebar-" + sidebar);
@@ -81,7 +84,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="webrtc/vad.html"><strong aria-hidden="true">2.2.</strong> Active Speaker Detection</a></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">3.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">3.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
+                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="webrtc/index.html"><strong aria-hidden="true">2.</strong> WebRTC</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="webrtc/congestion_control/cc.html"><strong aria-hidden="true">2.1.</strong> Congestion Control</a></li><li class="chapter-item expanded "><a href="webrtc/voice_activity_detection/vad.html"><strong aria-hidden="true">2.2.</strong> Voice Activity Detection</a></li></ol></li><li class="chapter-item expanded "><a href="rtsp/index.html"><strong aria-hidden="true">3.</strong> RTSP</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="rtsp/stream_setup.html"><strong aria-hidden="true">3.1.</strong> Receiving the stream</a></li><li class="chapter-item expanded "><a href="rtsp/stream_decoding.html"><strong aria-hidden="true">3.2.</strong> Decoding the stream</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="rtsp/conversions/rtsp_to_webrtc.html"><strong aria-hidden="true">3.2.1.</strong> RTSP to WebRTC</a></li><li class="chapter-item expanded "><a href="rtsp/conversions/rtsp_to_hls.html"><strong aria-hidden="true">3.2.2.</strong> RTSP to HLS</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="bugs/index.html"><strong aria-hidden="true">4.</strong> The Great Chapter of Bugs</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="bugs/socket_buffer/socket_buffer.html"><strong aria-hidden="true">4.1.</strong> Packet loss in a local network</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -290,15 +293,42 @@ Probe e.g. 10 seconds after lowering the resolution.
 If the network is still unstable, try again in 20 seconds.
 If the situation doesn't change, wait 40 seconds and so on.</li>
 </ul>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="active-speaker-detection"><a class="header" href="#active-speaker-detection">Active Speaker Detection</a></h1>
-<p>A common feature in video conferencing software is active speaker detection.
-It is a small feature, but one that the user would feel weird without.
-Oftentimes, it is visualised by highlighting the user's tile while they are talking.
-Other use cases include deciding which participants should be shown on the screen.
-This can be implemented by using historical data about their voice activity.</p>
-<p>As you can see, voice activity detection is a small, but important piece of any WebRTC implementation.
-WebRTC standard provides tools that make it easy and convenient to implement this in your Selective Forwarding Unit.</p>
-<h2 id="audio-level-header-extension"><a class="header" href="#audio-level-header-extension">Audio Level Header extension</a></h2>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="voice-activity-detection"><a class="header" href="#voice-activity-detection">Voice Activity Detection</a></h1>
+<p><em>It's just thresholding with extra steps</em></p>
+<hr />
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of contents</a></h2>
+<ol>
+<li><a href="webrtc/voice_activity_detection/vad.html#introduction">Introduction</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#what-does-the-webrtc-protocol-provide">What does the WebRTC protocol provide?</a>
+<ul>
+<li><a href="webrtc/voice_activity_detection/vad.html#audio-level-header-extension">Audio Level Header extension</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#audio-level-processing">Audio Level processing</a></li>
+</ul>
+</li>
+<li><a href="webrtc/voice_activity_detection/vad.html#the-algorithm">The algorithm</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#implementation-details">Implementation details</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#-tests--tests-tests--"><em>Tests, tests tests!</em></a>
+<ul>
+<li><a href="webrtc/voice_activity_detection/vad.html#unit-tests">Unit tests</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#manual-tests">Manual tests</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#performance">Performance</a></li>
+</ul>
+</li>
+<li><a href="webrtc/voice_activity_detection/vad.html#conclusions">Conclusions</a>
+<ul>
+<li><a href="webrtc/voice_activity_detection/vad.html#where-it-pans-out">Where it pans out...</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#where-it-falls-short">...where it falls short...</a></li>
+<li><a href="webrtc/voice_activity_detection/vad.html#and-what-can-be-added">...and what can be added.</a></li>
+</ul>
+</li>
+</ol>
+<h2 id="introduction-1"><a class="header" href="#introduction-1">Introduction</a></h2>
+<p>Voice Activity Detection (or <em>VAD</em> for short) is a technology that enables the automatic detection of speech activity in an audio signal. This is an essential tool for various applications such as speech recognition, speaker diarization, and voice communication systems.</p>
+<p>In video conference applications VAD is implemented as a part of the audio processing pipeline. When a user speaks, the VAD algorithm detects the presence of speech activity by analyzing the noise levels of the audio signal.</p>
+<p>For example, VAD can be used for showing an indicator that the user is speaking. In the picture below it can be seen in the upper left corner of the video tile.</p>
+<p><img src="webrtc/voice_activity_detection/user_with_vad_indicator.png" alt="Vad indication" /></p>
+<h2 id="what-does-the-webrtc-protocol-provide"><a class="header" href="#what-does-the-webrtc-protocol-provide">What does the WebRTC protocol provide?</a></h2>
+<h3 id="audio-level-header-extension"><a class="header" href="#audio-level-header-extension">Audio Level Header extension</a></h3>
 <p><a href="https://www.rfc-editor.org/rfc/rfc6464">RFC 6464</a> defines an Audio Level Header extension, which is very useful in the context of Voice Activity Detection, as it takes the implementation load of the SFU.</p>
 <p>The Extension carries the information about the audio level in <code>-dBov</code> with values from 0 to 127.
 Please pay attention to the minus, as it makes it so that the louder it gets, the lower the value becomes.
@@ -313,44 +343,272 @@ In simpler terms, the overload point is the loudest possible sound that can be e
 When the use of it is negotiated, it indicates whether the encoder believes the audio packet contains voice activity.</p>
 <p>Hopefully, you now have some understanding of the value in the <code>level</code> field, and we can jump right into the algorithm.
 Don't worry, it's not difficult at all.</p>
-<h2 id="audio-level-processing"><a class="header" href="#audio-level-processing">Audio Level processing</a></h2>
+<h3 id="audio-level-processing"><a class="header" href="#audio-level-processing">Audio Level processing</a></h3>
 <p>You could use the flag bit &quot;V&quot; if available, but we don't recommend using it for the production environment for 2 reasons:</p>
 <ol>
 <li>It is optional, so you cannot be sure it will always be there.</li>
-<li>Implementation isn't standardized, meaning that you can have inconsistent behavior depending on the sender.</li>
+<li>Implementation isn't standardized, meaning you can have inconsistent behavior depending on the sender.</li>
 </ol>
-<p>It is therefore worth considering implementing your algorithm based purely on the <code>level</code> field.</p>
-<h3 id="detecting-speech"><a class="header" href="#detecting-speech">Detecting speech</a></h3>
-<p>The basic idea behind speech detection is a <em>threshold</em>.
-It is a volume that separates silence from speech.
-Marking audio packets as either speech or silence is straightforward:</p>
+<p>So it's time to implement a different approach...</p>
+<h2 id="the-algorithm"><a class="header" href="#the-algorithm">The algorithm</a></h2>
+<p>First, let's define the inputs and outputs of our function that would perform VAD. The function takes audio noise levels and the noise threshold value as inputs. It returns information on whether the given audio levels indicate if the person is speaking based on the given threshold.</p>
+<p><img src="webrtc/voice_activity_detection/vad_func.png" alt="vad_func" /></p>
+<h3 id="the-main-idea"><a class="header" href="#the-main-idea">The main idea</a></h3>
+<p>The main idea and many of the intricacies of the algorithm are provided in the original paper (that is <a href="https://israelcohen.com/wp-content/uploads/2018/05/IEEEI2012_Volfin.pdf"><em>Dominant Speaker Identification for Multipoint Videoconferencing</em> </a> by Ilana Volfin and Israel Cohen). The following implementation was inspired by it.</p>
+<p>Basically, we take the input levels and group them into three layers of intervals: <em>immediates</em>, <em>mediums</em> and <em>longs</em>. Intervals contain a finite number of subunits (longs contain mediums, mediums contain immediates and immediates contain level). The intervals are then thresholded and labeled as <em>active</em> or <em>inactive</em>. Based on the number of active intervals, an <em>activity score</em> is computed for each kind of interval.</p>
+<h3 id="in-a-little-more-detail"><a class="header" href="#in-a-little-more-detail">In a little more detail</a></h3>
+<p><strong>The intervals</strong></p>
+<p>There are three types of intervals:</p>
 <ul>
-<li>if the volume is higher than the threshold, the packet should be considered speech</li>
-<li>if otherwise, it should be considered silence.</li>
+<li><em>immediates</em> - smallest possible interval</li>
+<li><em>mediums</em> - a sample that is about as long as a word</li>
+<li><em>longs</em> - a sample that is about as long as a sentence</li>
 </ul>
-<p>However, human speech doesn't have a constant volume.
-Humans also take small breaks inbetween words.
-At 10 Hz, you can detect these, so while taking into consideration that only one packet at a time isn't good enough, we need to look at the bigger picture.</p>
-<p>The simplest and most effective way to implement it is to use a time window.
-You then calculate the average volume of the packet and apply the threshold to that value.
-If the threshold is exceeded, speech is marked on the audio track.</p>
-<p>There are two parameters in this algorithm that you can tweak:</p>
-<ol>
-<li><code>threshold</code> to tweak the sensitivity concerning the volume.
-You should tweak it if you find that your implementation doesn't detect actual speech at all, meaning that it is too high or, on the contrary, it interprets background noise as speech.</li>
-<li>Time window duration to tweak sensitivity to detect short, but loud sounds.</li>
-</ol>
-<h3 id="detecting-silence"><a class="header" href="#detecting-silence">Detecting silence</a></h3>
-<p>Detecting silence uses the same idea of a time window and comparing average volume to the threshold as detecting speech.
-We have found it rather tricky to tweak the values in such a way that speech is detected swiftly, and silence detection isn't too aggressive.
-For that reason, we need to apply an additional condition to silence detection - a time for which the average value must be below the threshold to mark voice activity on the audio stream as silence.</p>
-<h3 id="things-to-watch-out-for-during-implementation"><a class="header" href="#things-to-watch-out-for-during-implementation">Things to watch out for during implementation</a></h3>
-<p>In no particular order:</p>
+<p>There are also internal parameters of the algorithm like:</p>
 <ul>
+<li><code>@n1, @n2, @n3</code> - how many of the smaller intervals are in one bigger interval
+<ul>
+<li><code>@n1</code> - levels in one immediate</li>
+<li><code>@n2</code> - immediates in one medium</li>
+<li><code>@n3</code> - mediums in one long</li>
+</ul>
+</li>
+<li><code>@mediums_subunit_threshold</code> - how many active immediates the medium interval should consist of to be counted as active</li>
+<li><code>@long_subunit_threshold</code> - as above, but given the mediums and a long interval</li>
+</ul>
+<p>To compute them we take the input levels.</p>
+<p><img src="webrtc/voice_activity_detection/levels.png" alt="levels" /></p>
+<p>Then we combine them into immediates. Immediates are counted as active or inactive based on the threshold provided.</p>
+<p><img src="webrtc/voice_activity_detection/immediates.png" alt="immediates" /></p>
+<p>The numbers indicate the number of levels that are above the threshold. Since <code>@n1</code> is equal to one, immediates only have values 0 or 1.</p>
+<p>After that, the mediums are computed in a similar fashion.</p>
+<p><img src="webrtc/voice_activity_detection/mediums.png" alt="mediums" /></p>
+<p>The red color indicates an inactive unit, whereas green symbolizes an active one. The numbers on mediums indicate counted active subunits of the lower tier.</p>
+<p>Then the longs are counted.</p>
+<p><img src="webrtc/voice_activity_detection/longs.png" alt="longs" /></p>
+<p>And the interval computations are done!</p>
+<p><em>Additional note</em></p>
+<p>Typically, there is only one long interval. This means that the maximum number of levels needed can be simply counted by multiplying <code>@n1</code>, <code>@n2</code> and <code>@n3</code> and therefore:</p>
+<ol>
+<li>The algorithm takes a constant number of audio levels.</li>
+<li>If the number of audio levels is smaller, it returns <code>:silence</code>.</li>
+</ol>
+<p><strong>Activity score</strong></p>
+<p>After computing the intervals, we take the most recent one from all 3 lengths and compute the activity score for each one.
+The computed values are also thresholded with other internal parameters called <code>@immediate_score_threshold</code>, <code>@medium_score_threshold</code> and <code>@long_score_threshold</code>.
+If all the activity scores are above their threshold, the function returns <code>:speech</code>, otherwise <code>:false</code>.</p>
+<p><img src="webrtc/voice_activity_detection/activity_score.png" alt="activity_score" /></p>
+<p>The activity score formula is taken directly from the paper. It is a loglikelihood of two probabilities: the probability of speech and the probability of silence. It is based on the number of active subunits in a unit. The details are provided in the aforementioned paper.</p>
+<h2 id="implementation-details"><a class="header" href="#implementation-details">Implementation details</a></h2>
+<p>The algorithm described above was implemented as part of <a href="https://github.com/jellyfish-dev"><code>Jellyfish</code></a>. The implementation also handles:</p>
+<ul>
+<li>updating the queue in which the audio levels are stored</li>
+<li>rolling over if a late packet has been delivered</li>
+<li>sending information if the VAD status has changed</li>
+</ul>
+<p>Those steps are essential for the VAD to work properly in video conference context, so please, remember that in your own implementation.</p>
+<p><strong>Other useful information</strong>:</p>
+<ol>
 <li>WebRTC usually uses UDP under the hood, so packets will arrive out of order.
 You probably don't want to get a jitter buffer involved, so make sure that your time window implementation can handle out-of-order and possibly even late packets.</li>
-<li>Remember that you're dealing with <code>-dBov</code>. The absolute value for silence is <code>127</code>, and the loudest possible sound gets </li>
+<li>Remember that you're dealing with <code>-dBov</code>. The absolute value for silence is <code>127</code>, and the loudest possible sound has a value of <code>0</code>.</li>
+</ol>
+<h2 id="tests-tests-tests"><a class="header" href="#tests-tests-tests"><em>Tests, tests, tests!</em></a></h2>
+<h3 id="manual-tests"><a class="header" href="#manual-tests">Manual tests</a></h3>
+<p>The process of choosing internal parameters of the algorithm was not a trivial task. To have a better understanding of the inner workings of the algorithm, the VAD implementation was added to <a href="https://github.com/membraneframework/membrane_videoroom">a video conference application</a> and checked in terms of the return value and the activity scores it had produced.</p>
+<p>The experiment consisted of telling the lines from Hamlet in Polish:</p>
+<p><em>Niech ryczy z bólu ranny łoś,</em> (0.5 - 2.5 s)<br>
+<em>zwierz zdrów przebiega knieje</em> (3.5 - 5.75 s)</p>
+<p><code>True</code> values are expected in the aforementioned time ranges.</p>
+<p>Then the audio levels along with the threshold and the actual results were plotted with the results given below.</p>
+<p><img src="webrtc/voice_activity_detection/level_per_packet.png" alt="levels" /></p>
+<p>Not every packet with a level above the threshold has a <code>True</code> value. That is expected because we don't want the algorithm to always be active.</p>
+<p>The activity scores were as follows:</p>
+<p><img src="webrtc/voice_activity_detection/immediate_score_per_packet.png" alt="immediates" /></p>
+<p><img src="webrtc/voice_activity_detection/medium_score_per_packet.png" alt="mediums" /></p>
+<p><img src="webrtc/voice_activity_detection/long_score_per_packet.png" alt="longs" /></p>
+<p>Small activity scores mean that the packets above the threshold quickly generate <code>:speech</code> as output, but don't stop immediately. It can be changed by changing the algorithm parameters if needed.</p>
+<h3 id="performance"><a class="header" href="#performance">Performance</a></h3>
+<p>Some small performance tests were done in order to check if the algorithm implemented in <a href="https://github.com/jellyfish-dev"><code>Jellyfish</code></a> is well-optimized and can serve in the real-time communication environment.</p>
+<p>The time of the whole process was usually around 60 μs, which means no significant overhead. The number of reductions (function calls) was around 210. This matches our needs.</p>
+<h2 id="conclusions"><a class="header" href="#conclusions">Conclusions</a></h2>
+<h3 id="where-it-pans-out"><a class="header" href="#where-it-pans-out">Where it pans out...</a></h3>
+<p>The algorithm is better than a simple count of a running average or thresholding without any additions. It generates plausible results quickly and without significant overhead. In short, the algorithm does what is expected.</p>
+<h3 id="where-it-falls-short"><a class="header" href="#where-it-falls-short">...where it falls short...</a></h3>
+<p>As always, there can be room for improvement.</p>
+<p>The number of parameters is big, especially for a simple algorithm like this. This makes it hard to parametrize well and may produce confusion for people that do not understand the algorithm that well.</p>
+<p>The fixed threshold is not well suited for WebRTC and videoconferencing in general, mostly because of different user audio settings and unspecified Auto Gain Control (AGC) behavior.</p>
+<h3 id="and-what-can-be-added"><a class="header" href="#and-what-can-be-added">...and what can be added</a></h3>
+<p><strong>Dominant Speaker Detection</strong></p>
+<p>In the context of video conferencing platforms such as Jitsi, VAD is an important feature that allows for more efficient use of network resources by suppressing audio transmission during periods of silence. This can significantly reduce the bandwidth requirements and improve the overall quality of communication.</p>
+<p>Once speech is detected, the audio stream is transmitted to other participants in the conference. When speech stops, the VAD algorithm detects the silence and stops transmitting the audio, thus reducing the network bandwidth usage.</p>
+<p>A Dominant Speaker Detection like this could also be implemented in Videoroom. The estimation could be obtained from the activity scores computed during the described algorithm.</p>
+<p><strong>Additional UI features in Videoroom</strong></p>
+<p>Google Meet, Jitsi and many more WebRTC have <em>an animation</em> of what looks as <em>continuous</em> value returned by VAD. The indicator of speech moves along in correlation with how loud a person speaks.</p>
+<p>For this to be completed in Videoroom, the activity score would need to be better adjusted.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rtsp"><a class="header" href="#rtsp">RTSP</a></h1>
+<p>RTSP (Real Time Streaming Protocol) is an application-level protocol used to control the delivery of data with real-time properties.
+It was defined in <a href="https://www.rfc-editor.org/rfc/rfc2326">RFC 2326</a>. It's mainly used in media servers and surveillance web cameras.</p>
+<blockquote>
+<p>Note that <a href="https://www.rfc-editor.org/rfc/rfc7826">RFC 7826</a> defines RTSP 2.0, which makes the previous document obsolete,
+but this chapter will only refer to RTSP 1.0, as that's the version of the protocol we worked with.</p>
+</blockquote>
+<p>It uses the same concepts as basic HTTP, though an important distinction between these two is that RTSP is not stateless.</p>
+<p>RTSP by itself provides only the means to <strong>control</strong> the delivery of the stream. The actual stream contents are delivered
+using mechanisms based upon RTP (Real-time Transport Protocol). This means that RTCP (RTP Control Protocol) messages
+may also be exchanged between the server and the client using the media delivery channel (more on that in the following sections).</p>
+<p>While working with RTSP, we encountered quite a few setbacks and roadblocks,
+which we're going to describe in detail in this chapter.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="setting-up-the-connection"><a class="header" href="#setting-up-the-connection">Setting up the connection</a></h1>
+<p>To receive a stream from an RTSP server, at least two separate connections need to be made:</p>
+<ul>
+<li>one for session negotiation and signalling, using RTSP (usually over TCP)</li>
+<li>others for stream delivery (one per each stream), using RTP (usually over UDP)</li>
 </ul>
+<p>An example setup could look like this:
+<img src="rtsp/./rtsp_connection.png" alt="RTSP connection" /></p>
+<h2 id="signalling"><a class="header" href="#signalling">Signalling</a></h2>
+<p>The client sends various RTSP requests to the server, the most important ones being DESCRIBE, SETUP and PLAY.
+The server responds to these requests accordingly, depending on the current state of the session.</p>
+<ul>
+<li>For a DESCRIBE request, the response will include information about codecs used by the server,
+how many media streams it can offer, etc.</li>
+<li>SETUP requests must be targeted at a given stream. They communicate to the server that we wish to receive the stream,
+and the response contains information such as ports between which the stream will flow.</li>
+<li>PLAY requests must be targeted at a given stream that has already been set up. After receiving a valid PLAY request,
+the server will start sending media.</li>
+</ul>
+<p>RTSP servers have a given timeout for sessions - if no requests are made within that timeout, the session is terminated.
+For that reason, clients need to send keep-alive messages to the server regularly, or else they'll stop receiving
+the stream once the timer is up. Most commonly, empty GET_PARAMETER requests are used as keep-alives; alternatively,
+some servers may extend the session automatically upon receiving an RTCP Receiver Report related to a given stream.</p>
+<h2 id="stream-delivery"><a class="header" href="#stream-delivery">Stream delivery</a></h2>
+<p>The client sends a separate RTSP SETUP request for each stream that they want to receive.
+These requests must contain the port or port range, where the client expects to receive the stream.</p>
+<p>Some RTSP servers may offer to set up two consecutive ports per stream - the first one for stream delivery
+and the second one for the exchange of RTCP messages.</p>
+<h2 id="creating-a-nat-binding"><a class="header" href="#creating-a-nat-binding">Creating a NAT binding</a></h2>
+<p>Since RTP stream delivery is initiated by the server, if the client is behind NAT, a binding won't be created by itself,
+and the stream won't reach the client. However, a simple hack can be used to combat this issue. During the negotiation,
+we receive the port(s) from which the server will send the RTP stream. If we then send any datagram (even with an empty payload)
+from the client port(s) configured during negotiation, to the server port(s) received, it will be enough to create a NAT binding.
+This solution will allow the stream to reach the client, even when using the most restrictive, symmetric NAT.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="actually-using-the-stream"><a class="header" href="#actually-using-the-stream">Actually using the stream</a></h1>
+<p><em>What use is a stream if one cannot view it?</em></p>
+<p>When we were working with RTSP, we attempted to:</p>
+<ol>
+<li>deliver the stream to a WebRTC peer, and</li>
+<li>convert the received stream to an HLS playlist.</li>
+</ol>
+<p>Unfortunately, to decode the stream, we must first deal with several issues.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rtsp-to-webrtc"><a class="header" href="#rtsp-to-webrtc">RTSP to WebRTC</a></h1>
+<p>Both RTSP and WebRTC use RTP for stream transportation. This may lead you to think it'd be enough to simply forward
+the received RTP packets to WebRTC peers, perhaps changing their SSRC in the process. <em>How hard can it be?</em></p>
+<p>Sadly, it's not as easy as it might seem.</p>
+<h2 id="keyframes"><a class="header" href="#keyframes">Keyframes</a></h2>
+<p>If a new WebRTC peer joins an existing room, we will need to request keyframes (IDR frames) from all other participants.
+This poses a problem: RTSP itself does not provide a way to request that a keyframe be transmitted in the RTP stream.</p>
+<blockquote>
+<p>The issues we write about in this section could maybe be alleviated by sending an RTCP FIR (Full Intra Request),
+RTCP PLI (Picture Loss Indication) or RTCP NACK (Negative Acknowledgement) for the lost packets.
+We won't write about this solution, as not all RTSP servers may support such requests.
+Refer to <a href="https://www.rfc-editor.org/rfc/rfc4585">RFC 4585</a>, <a href="https://www.rfc-editor.org/rfc/rfc5104">RFC 5104</a>
+and <a href="https://www.rfc-editor.org/rfc/rfc6642">RFC 6642</a> for more details.</p>
+</blockquote>
+<p>Usually, keyframe frequency may only be configured server-side (globally for all clients) in encoder settings.
+The server will send a keyframe to each recipient every <em>n</em> frames, and that's about it.</p>
+<p>The implications? Real-life example: We had an RTSP camera set up (default settings) so that it had a framerate of 25 fps and transmitted an IDR frame
+every 32nd frame, so every 1.28 seconds. This meant that, worst case scenario, you connected to a stream and had to wait over
+a second before being able to decode the stream, with no way to shorten this delay other than changing the server's encoder settings.</p>
+<p>What's more: Once an IDR frame is lost, it's lost. You can't really do anything on the client side, which means no retransmissions
+(unless you use RTP over TCP or the server handles RTCP NACK/PLI).</p>
+<h2 id="stream-parameters"><a class="header" href="#stream-parameters">Stream parameters</a></h2>
+<p>You may know that in order to decode a video stream encoded using H264, you need stream parameters, SPS (Sequence Parameter Set)
+and PPS (Picture Parameter Set). These may be transmitted in-band (together with the video stream, contained inside RTP
+packets) - if that's the case, no problems here. However, they may also be transmitted out-of-band, meaning they're absent
+in the video stream, and have to be delivered in some other way (and that's precisely what most RTSP servers will be doing).</p>
+<p>Usually, RTSP servers will transmit stream parameters (together with other useful info) inside a response to the DESCRIBE request.
+They will be encoded using SDP (Session Description Protocol, <a href="https://www.rfc-editor.org/rfc/rfc8866">RFC 8866</a>,
+parameters: <a href="https://www.rfc-editor.org/rfc/rfc6871">RFC 6871</a>).</p>
+<p>When it comes to WebRTC, the parameters <strong>must</strong> be present in the stream. This means that one needs to parse the parameters from the response,
+then somehow include them within the stream itself.</p>
+<p><em>I'm sure injecting them won't cause any significant problems...</em></p>
+<h3 id="injecting-parameters-into-the-stream"><a class="header" href="#injecting-parameters-into-the-stream">Injecting parameters into the stream</a></h3>
+<p>Should you wish to include the parameters in the RTP stream more than once (perhaps adding them before every keyframe,
+so that new peers are able to decode the stream if they joined later on), you immediately run into issues regarding packet numbering. </p>
+<p>Suppose we have the following RTP packets being sent by the server:</p>
+<pre><code>0  1  2  3  4  5  6  7  8  9  10    - sequence number
+      I           I           I     - I if keyframe
+</code></pre>
+<p>Let's say we have the SPS and PPS (delivered out-of-band) parsed and payloaded into an RTP packet <code>&quot;P&quot;</code> that we may inject into the stream at will.
+Let's also assume that we will drop packets until we get the first keyframe, then inject the parameters before every keyframe in the stream.</p>
+<p>If we inject some packets into the stream, we have to change the sequence numbers of all of the following packets.
+For now, let's say we're just going to assign them entirely new numbers, sequentially.</p>
+<p>If we receive the packets in sequence, we'll be sending:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10    - original sequence numbers
+0  1  2  3  4  5  6  7  8  9  10 11    - new sequence numbers
+</code></pre>
+<p>Suppose, however, that packet 6 arrived out of order, after packets 7 and 8:</p>
+<pre><code>0  1  2  3  4  5  7  8  6  9  10       - packets received by client
+</code></pre>
+<p>We're just checking if something is a keyframe, so this means we're sending</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+0  1  2  3  4  5  6  7  8  9  10 11    - new sequence numbers
+</code></pre>
+<p>The issue is obvious: the packet with the original sequence number 6 is now <em>after</em> the packet with the original sequence number 7.
+This means that we can't simply number the packets sequentially in the order we receive them.</p>
+<p>OK, then suppose <code>new = old + offset</code>, where <code>offset</code> - amount of packets injected by us up to that point.
+In sequence:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10
+2  3  4  5  6  7  8  9  10 11 12 13    - new sequence numbers
+</code></pre>
+<p>Seems good, right? It's certainly better, as it will correctly number regular frames, which arrived out of order.
+Unfortunately, this won't be the case with keyframes arriving out of order. Consider, once again, the previous example:</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+2  3  4  5  6  8  9  ?? 7  10 11 12
+</code></pre>
+<p>We only have one spot left (number 7) for both parameters and I-frame 6. Not ideal.</p>
+<p>Alright then, let's say <code>new = old * 2</code>, and if we need to inject a packet, just use the free number.
+In sequence:</p>
+<pre><code>P  2  3  4  5  P  6  7  8  9  P  10
+3  4  6  8  10 11 12 14 16 18 19 20
+</code></pre>
+<p>And, in the changed order:</p>
+<pre><code>P  2  3  4  5  7  8  P  6  9  P  10
+3  4  6  8  10 14 16 11 12 18 19 20
+</code></pre>
+<p>Problem solved? Not quite. The issue is, this might cause some element downstream to think there's packet loss present,
+because of the gaps. This, in turn, may cause RTCP NACKs to be sent for nonexistent packets, and possibly other unpleasant
+things to follow.</p>
+<p>Of course, there's the option of adding the parameters before EVERY frame - if you're alright with wasting a lot of bandwidth, that is.</p>
+<p>Another possible solution would be to use an ordering buffer of an arbitrary size. This, however, introduces more delay...</p>
+<p>And now the fun part: To make things simpler, we assumed an RTP packet to contain exactly one frame. This doesn't have to
+be the case! RTP packets can also have multiple different frames (with the same or different timestamps), or just a part
+of a single frame in their payload. Refer to <a href="https://www.rfc-editor.org/rfc/rfc3984">RFC 3984</a> if you wish to learn more.</p>
+<blockquote>
+<p>All of this contains some oversimplifications (Access Units =/= Network Abstraction Layer Units). Refer to
+<a href="https://www.itu.int/rec/dologin_pub.asp?lang=e&amp;id=T-REC-H.264-201602-S!!PDF-E&amp;type=items">the official H.264 specification</a>
+if you wish to learn even more.</p>
+</blockquote>
+<h3 id="but-what-if-we-didnt-have-to-add-more-packets"><a class="header" href="#but-what-if-we-didnt-have-to-add-more-packets">But what if we didn't have to add more packets?</a></h3>
+<p>Suppose we simply took each packet with an I-frame, extracted its payload, attached SPS and PPS before it,
+and payloaded it again, onto a single RTP packet with the same ordering number, just maybe a different packet type
+and a different size? No numbering/reordering issues then!</p>
+<p>Unfortunately, that would be too good to be true. Increasing payload size means you run the risk
+of exceeding the network's MTU, in which case, the modified packets will get dropped along the way.</p>
+<p>But surely we could add parameters to payload, then fragment if necessary so that each individual packet is below the MTU?
+Maybe that's the solution we've been looking for-- oh, wait, this runs headfirst into the very same numbering issues as before.</p>
+<p>To summarise, in most cases, if one wishes to inject H264 parameters into the RTP stream itself, depayloading, parsing
+and repackaging the entire stream is the only viable option.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="rtsp-to-hls"><a class="header" href="#rtsp-to-hls">RTSP to HLS</a></h1>
+<blockquote>
+<p>Some of the terms used here are explained in detail in the section <a href="rtsp/conversions/./rtsp_to_webrtc.html">RTSP to WebRTC</a>. Refer to it if you get lost.</p>
+</blockquote>
+<p>RTSP to HLS conversion is relatively simple. The stream has to be extracted from RTP packets anyway, so there's no point
+trying to inject parameters into the stream, as the process of unpacking RTP removes sequence numbers,
+and we can then add SPS and PPS to each H264 keyframe.</p>
+<p>Keep in mind, however, that (usually) keyframes will still be sent at a fixed rate. Also, it might be in your best interest to
+ensure the HLS segment duration overlaps with keyframe frequency.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="the-great-chapter-of-bugs"><a class="header" href="#the-great-chapter-of-bugs">The Great Chapter of Bugs</a></h1>
 <p>During the development of Jellyfish, we encountered a wide variety of bugs that took us days, weeks or even
 months to fix.
@@ -432,5 +690,6 @@ In addition, we also increased the number of datagrams that can be read at once.
         });
         </script>
 
+    </div>
     </body>
 </html>
